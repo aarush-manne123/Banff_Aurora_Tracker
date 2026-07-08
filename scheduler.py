@@ -26,7 +26,10 @@ def check_conditions_and_notify(app):
     with app.app_context():
         kp_data = aurora_service.get_current_kp()
         weather = weather_service.get_current_conditions(
-            app.config["BANFF_LAT"], app.config["BANFF_LON"], app.config["TIMEZONE"]
+            app.config["BANFF_LAT"],
+            app.config["BANFF_LON"],
+            app.config["TIMEZONE"],
+            app.config.get("GROQ_API_KEY"),
         )
 
         if kp_data is None or weather is None or weather.get("cloud_cover") is None:
