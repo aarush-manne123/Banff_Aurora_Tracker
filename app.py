@@ -56,6 +56,7 @@ def create_app():
             app.config.get("GROQ_API_KEY"),
         )
         sparkline_points = _build_sparkline(kp_history)
+        daily_forecast = weather.get("daily_forecast", []) if weather else []
         return render_template(
             "index.html",
             kp_data=kp_data,
@@ -63,6 +64,7 @@ def create_app():
             weather=weather,
             locations=VIEWING_LOCATIONS,
             sparkline_points=sparkline_points,
+            daily_forecast=daily_forecast,
         )
 
 
