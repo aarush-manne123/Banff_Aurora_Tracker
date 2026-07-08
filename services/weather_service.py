@@ -4,6 +4,7 @@ weather API that requires no API key: https://open-meteo.com/
 """
 
 import logging
+import time
 from datetime import datetime
 
 import requests
@@ -12,12 +13,24 @@ FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 
 logger = logging.getLogger(__name__)
 
+# Simple in-memory cache to avoid rate limiting
+_weather_cache = {"data": None, "timestamp": 0}
+CACHE_TTL = 300  # 5 minutes
+
 
 def get_current_conditions(lat, lon, timezone):
     """
     Returns current cloud cover, temperature and a short night-hours cloud
     forecast for the given coordinates, or None on failure.
+    Uses a 5-minute cache to avoid rate limiting.
     """
+    current_time = time.time()
+
+    # Return cached data if still valid
+    if _weather_cache["data"] and (current_time - _weather_cache["timestamp"] < CACHE_TTL):
+        logger.debug("Using cached weather data")
+        return _weather_cache["data"]
+
     params = {
         "latitude": lat,
         "longitude": lon,
@@ -42,12 +55,22 @@ def get_current_conditions(lat, lon, timezone):
             if hour >= 20 or hour <= 6:
                 night_forecast.append({"time": t, "cloud_cover": cloud})
 
-        return {
+        result = {
             "cloud_cover": current.get("cloud_cover"),
             "temperature_c": current.get("temperature_2m"),
             "observed_at": current.get("time"),
             "night_forecast": night_forecast[:12],
         }
+
+        # Cache the result
+        _weather_cache["data"] = result
+        _weather_cache["timestamp"] = current_time
+
+        return result
     except (requests.RequestException, ValueError, KeyError) as exc:
         logger.warning("Could not fetch weather conditions: %s", exc)
+        # Return cached data even if expired, as fallback
+        if _weather_cache["data"]:
+            logger.info("Using expired cached data as fallback")
+            return _weather_cache["data"]
         return None
