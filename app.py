@@ -49,6 +49,7 @@ def create_app():
     def index():
         kp_data = aurora_service.get_current_kp()
         kp_history = aurora_service.get_recent_kp_history()
+        kp_forecast = aurora_service.get_kp_forecast(days=4)
         weather = weather_service.get_current_conditions(
             app.config["BANFF_LAT"],
             app.config["BANFF_LON"],
@@ -57,6 +58,16 @@ def create_app():
         )
         sparkline_points = _build_sparkline(kp_history)
         daily_forecast = weather.get("daily_forecast", []) if weather else []
+
+        # Merge aurora forecast with weather forecast
+        for i, day in enumerate(daily_forecast):
+            if i < len(kp_forecast):
+                day["aurora_kp_max"] = kp_forecast[i]["kp_max"]
+                day["aurora_label"] = kp_forecast[i]["label"]
+            else:
+                day["aurora_kp_max"] = None
+                day["aurora_label"] = "Unknown"
+
         return render_template(
             "index.html",
             kp_data=kp_data,
