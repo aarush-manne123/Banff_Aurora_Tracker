@@ -55,6 +55,80 @@ def _get_from_wttr(lat, lon):
         return None
 
 
+def _get_from_groq(lat, lon, api_key):
+    """
+    Fallback to Groq AI when all weather APIs fail.
+    Uses AI to estimate current weather conditions for the location.
+    """
+    if not api_key:
+        logger.warning("Groq API key not provided, skipping AI fallback")
+        return None
+
+    try:
+        prompt = f"""You are a weather assistant. Provide current weather conditions for Banff, Alberta (latitude {lat}, longitude {lon}).
+Return ONLY a JSON object with these exact keys:
+- cloud_cover: integer 0-100 (percentage of cloud cover)
+- temperature_c: float (temperature in Celsius)
+- observed_at: string (current time in ISO format)
+- night_forecast: array of objects with "time" and "cloud_cover" keys for tonight (8pm-6am)
+
+Example format:
+{{
+  "cloud_cover": 45,
+  "temperature_c": 18.5,
+  "observed_at": "2026-07-08T12:00:00",
+  "night_forecast": [
+    {{"time": "20:00", "cloud_cover": 50}},
+    {{"time": "21:00", "cloud_cover": 55}},
+    {{"time": "22:00", "cloud_cover": 60}},
+    {{"time": "23:00", "cloud_cover": 65}},
+    {{"time": "00:00", "cloud_cover": 70}},
+    {{"time": "01:00", "cloud_cover": 65}},
+    {{"time": "02:00", "cloud_cover": 60}},
+    {{"time": "03:00", "cloud_cover": 55}},
+    {{"time": "04:00", "cloud_cover": 50}},
+    {{"time": "05:00", "cloud_cover": 45}},
+    {{"time": "06:00", "cloud_cover": 40}}
+  ]
+}}
+
+Respond with ONLY the JSON, no other text."""
+
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+
+        data = {
+            "model": "llama-3.3-70b-versatile",
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.3,
+            "max_tokens": 500
+        }
+
+        resp = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=data, timeout=15)
+        resp.raise_for_status()
+        result = resp.json()
+
+        content = result["choices"][0]["message"]["content"]
+
+        # Parse the JSON response
+        import json
+        weather_data = json.loads(content)
+
+        # Validate required fields
+        if not all(key in weather_data for key in ["cloud_cover", "temperature_c", "observed_at", "night_forecast"]):
+            logger.warning("Groq response missing required fields")
+            return None
+
+        logger.info("Successfully retrieved weather data from Groq AI")
+        return weather_data
+
+    except Exception as exc:
+        logger.warning("Groq AI fallback failed: %s", exc)
+        return None
+
+
 def _get_mock_data():
     """
     Last resort: return mock data when all APIs fail.
@@ -73,7 +147,7 @@ def _get_mock_data():
     }
 
 
-def get_current_conditions(lat, lon, timezone):
+def get_current_conditions(lat, lon, timezone, groq_api_key=None):
     """
     Returns current cloud cover, temperature and a short night-hours cloud
     forecast for the given coordinates, or None on failure.
@@ -128,6 +202,14 @@ def get_current_conditions(lat, lon, timezone):
                 _weather_cache["data"] = fallback_result
                 _weather_cache["timestamp"] = current_time
                 return fallback_result
+            # Try Groq AI fallback
+            if groq_api_key:
+                logger.warning("Trying Groq AI fallback")
+                groq_result = _get_from_groq(lat, lon, groq_api_key)
+                if groq_result:
+                    _weather_cache["data"] = groq_result
+                    _weather_cache["timestamp"] = current_time
+                    return groq_result
             # Return cached data even if expired, as fallback
             if _weather_cache["data"]:
                 logger.info("Using expired cached data as fallback")
@@ -142,6 +224,14 @@ def get_current_conditions(lat, lon, timezone):
                 _weather_cache["data"] = fallback_result
                 _weather_cache["timestamp"] = current_time
                 return fallback_result
+            # Try Groq AI fallback
+            if groq_api_key:
+                logger.warning("Trying Groq AI fallback")
+                groq_result = _get_from_groq(lat, lon, groq_api_key)
+                if groq_result:
+                    _weather_cache["data"] = groq_result
+                    _weather_cache["timestamp"] = current_time
+                    return groq_result
             # Return cached data even if expired, as fallback
             if _weather_cache["data"]:
                 logger.info("Using expired cached data as fallback")
