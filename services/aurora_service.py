@@ -8,6 +8,7 @@ https://services.swpc.noaa.gov/
 """
 
 import logging
+import time
 
 import requests
 
@@ -15,6 +16,10 @@ KP_INDEX_URL = "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.j
 FORECAST_URL = "https://services.swpc.noaa.gov/text/3-day-forecast.txt"
 
 logger = logging.getLogger(__name__)
+
+# Simple in-memory cache to avoid rate limiting
+_kp_cache = {"data": None, "timestamp": 0}
+CACHE_TTL = 300  # 5 minutes
 
 # Banff sits at a magnetic latitude where the aurora is regularly visible
 # even during moderate activity. This table maps the planetary Kp index to
@@ -45,7 +50,15 @@ def get_current_kp():
     Returns the most recent planetary Kp index reading as a dict:
     {"kp": float, "time_tag": str, "label": str, "detail": str}
     or None if the data could not be fetched.
+    Uses a 5-minute cache to avoid rate limiting.
     """
+    current_time = time.time()
+
+    # Return cached data if still valid
+    if _kp_cache["data"] and (current_time - _kp_cache["timestamp"] < CACHE_TTL):
+        logger.debug("Using cached Kp data")
+        return _kp_cache["data"]
+
     try:
         resp = requests.get(KP_INDEX_URL, timeout=10)
         resp.raise_for_status()
@@ -60,9 +73,19 @@ def get_current_kp():
         kp = float(kp_raw)
         label, detail = _guidance_for_kp(kp)
 
-        return {"kp": kp, "time_tag": time_tag, "label": label, "detail": detail}
+        result = {"kp": kp, "time_tag": time_tag, "label": label, "detail": detail}
+
+        # Cache the result
+        _kp_cache["data"] = result
+        _kp_cache["timestamp"] = current_time
+
+        return result
     except (requests.RequestException, ValueError, IndexError, KeyError) as exc:
         logger.warning("Could not fetch Kp index: %s", exc)
+        # Return cached data even if expired, as fallback
+        if _kp_cache["data"]:
+            logger.info("Using expired cached Kp data as fallback")
+            return _kp_cache["data"]
         return None
 
 
