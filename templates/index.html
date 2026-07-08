@@ -92,6 +92,16 @@
             <div class="forecast-bar-fill" style="width: {{ day.cloud_cover }}%"></div>
           </div>
         </div>
+        <div class="forecast-aurora">
+          <span class="forecast-label">Aurora activity</span>
+          <span class="forecast-value">{{ day.aurora_label }}</span>
+          {% if day.aurora_kp_max is not none %}
+          <div class="forecast-kp">
+            <span class="forecast-kp-label">Max Kp</span>
+            <span class="forecast-kp-value">{{ "%.1f"|format(day.aurora_kp_max) }}</span>
+          </div>
+          {% endif %}
+        </div>
         <div class="forecast-temp">
           <div class="forecast-temp-item">
             <span class="forecast-label">High</span>
