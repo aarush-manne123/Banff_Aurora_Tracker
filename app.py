@@ -46,7 +46,10 @@ def create_app():
         kp_data = aurora_service.get_current_kp()
         kp_history = aurora_service.get_recent_kp_history()
         weather = weather_service.get_current_conditions(
-            app.config["BANFF_LAT"], app.config["BANFF_LON"], app.config["TIMEZONE"]
+            app.config["BANFF_LAT"],
+            app.config["BANFF_LON"],
+            app.config["TIMEZONE"],
+            app.config.get("GROQ_API_KEY"),
         )
         sparkline_points = _build_sparkline(kp_history)
         return render_template(
