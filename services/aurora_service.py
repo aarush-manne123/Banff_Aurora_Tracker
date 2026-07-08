@@ -104,3 +104,59 @@ def get_recent_kp_history(limit=8):
     except (requests.RequestException, ValueError, IndexError, KeyError) as exc:
         logger.warning("Could not fetch Kp history: %s", exc)
         return []
+
+
+def get_kp_forecast(days=4):
+    """
+    Parses NOAA's 3-day forecast text to extract predicted Kp values.
+    Returns a list of {"date": str, "kp_max": float, "label": str} for each day.
+    """
+    try:
+        resp = requests.get(FORECAST_URL, timeout=10)
+        resp.raise_for_status()
+        text = resp.text
+
+        # Parse the forecast text
+        lines = text.split('\n')
+        forecast_days = []
+        current_date = None
+        kp_values = []
+
+        for line in lines:
+            # Look for date lines (e.g., "2026 Jul 08")
+            if line.strip() and len(line.strip().split()) == 3:
+                parts = line.strip().split()
+                if len(parts) == 3 and parts[0].isdigit() and parts[1] in ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']:
+                    # Save previous day if we have data
+                    if current_date and kp_values:
+                        kp_max = max(kp_values) if kp_values else 0
+                        label, _ = _guidance_for_kp(kp_max)
+                        forecast_days.append({
+                            "date": current_date,
+                            "kp_max": kp_max,
+                            "label": label
+                        })
+                    # Start new day
+                    current_date = line.strip()
+                    kp_values = []
+
+            # Look for Kp forecast lines (e.g., "00-03UT  3  2  1  0")
+            if 'UT' in line and any(c.isdigit() for c in line):
+                # Extract Kp values from the line
+                numbers = [int(x) for x in line.split() if x.isdigit()]
+                kp_values.extend(numbers)
+
+        # Don't forget the last day
+        if current_date and kp_values:
+            kp_max = max(kp_values) if kp_values else 0
+            label, _ = _guidance_for_kp(kp_max)
+            forecast_days.append({
+                "date": current_date,
+                "kp_max": kp_max,
+                "label": label
+            })
+
+        return forecast_days[:days]
+    except (requests.RequestException, ValueError) as exc:
+        logger.warning("Could not fetch Kp forecast: %s", exc)
+        return []
