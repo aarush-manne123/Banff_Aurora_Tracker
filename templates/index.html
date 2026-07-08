@@ -68,6 +68,47 @@
   </div>
 </section>
 
+{% if daily_forecast %}
+<section id="forecast" class="panel wrap">
+  <h2>4-Day Forecast</h2>
+  <p class="section-sub">Cloud cover and temperature outlook for the next few days.</p>
+
+  <div class="forecast-tabs">
+    {% for day in daily_forecast %}
+    <button class="forecast-tab {% if loop.first %}active{% endif %}" data-day="{{ loop.index0 }}">
+      {{ day.date }}
+    </button>
+    {% endfor %}
+  </div>
+
+  <div class="forecast-content">
+    {% for day in daily_forecast %}
+    <div class="forecast-day {% if loop.first %}active{% endif %}" data-day="{{ loop.index0 }}">
+      <div class="forecast-card">
+        <div class="forecast-cloud">
+          <span class="forecast-label">Cloud cover</span>
+          <span class="forecast-value">{{ "%.0f"|format(day.cloud_cover) }}%</span>
+          <div class="forecast-bar">
+            <div class="forecast-bar-fill" style="width: {{ day.cloud_cover }}%"></div>
+          </div>
+        </div>
+        <div class="forecast-temp">
+          <div class="forecast-temp-item">
+            <span class="forecast-label">High</span>
+            <span class="forecast-value">{{ "%.0f"|format(day.temp_max) }}°C</span>
+          </div>
+          <div class="forecast-temp-item">
+            <span class="forecast-label">Low</span>
+            <span class="forecast-value">{{ "%.0f"|format(day.temp_min) }}°C</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
 <section id="locations" class="panel wrap">
   <h2>Where to go tonight</h2>
   <p class="section-sub">All within a short drive of the townsite, ordered from closest to farthest.</p>
