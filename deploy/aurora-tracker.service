@@ -1,0 +1,19 @@
+[Unit]
+Description=Aurora Banff Flask app (gunicorn)
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/aurora-tracker
+EnvironmentFile=/var/www/aurora-tracker/.env
+ExecStart=/var/www/aurora-tracker/venv/bin/gunicorn \
+    --workers 2 \
+    --bind unix:/var/www/aurora-tracker/aurora.sock \
+    --access-logfile /var/log/aurora-tracker/access.log \
+    --error-logfile /var/log/aurora-tracker/error.log \
+    wsgi:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

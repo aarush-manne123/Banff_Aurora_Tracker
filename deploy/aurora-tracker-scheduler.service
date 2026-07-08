@@ -1,0 +1,14 @@
+[Unit]
+Description=Aurora Banff alert scheduler (single instance only)
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/aurora-tracker
+EnvironmentFile=/var/www/aurora-tracker/.env
+ExecStart=/var/www/aurora-tracker/venv/bin/python scheduler_runner.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
