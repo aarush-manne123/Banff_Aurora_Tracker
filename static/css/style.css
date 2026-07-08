@@ -330,11 +330,17 @@ main { position: relative; z-index: 1; }
   border-radius: var(--radius);
   padding: 32px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 32px;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 24px;
 }
 
 .forecast-cloud {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.forecast-aurora {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -370,6 +376,31 @@ main { position: relative; z-index: 1; }
   background: linear-gradient(90deg, var(--aurora-violet), var(--aurora-green));
   border-radius: 999px;
   transition: width 0.5s ease;
+}
+
+.forecast-kp {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--bg-panel);
+  border-radius: var(--radius-sm);
+  margin-top: 4px;
+}
+
+.forecast-kp-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.forecast-kp-value {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--aurora-green);
 }
 
 .forecast-temp {
@@ -536,6 +567,7 @@ main { position: relative; z-index: 1; }
 @media (max-width: 860px) {
   .location-grid { grid-template-columns: repeat(2, 1fr); }
   .subscribe-inner { grid-template-columns: 1fr; padding: 28px; }
+  .forecast-card { grid-template-columns: 1fr; gap: 20px; }
 }
 
 @media (max-width: 640px) {
@@ -545,4 +577,5 @@ main { position: relative; z-index: 1; }
   .location-grid { grid-template-columns: 1fr; }
   .field-row { grid-template-columns: 1fr; }
   .hero { padding-top: 48px; }
+  .forecast-card { padding: 24px; }
 }
