@@ -23,6 +23,9 @@ class Config:
     SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "")
     SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
 
+    # Groq AI API key for fallback weather data
+    GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+
     CHECK_INTERVAL_MINUTES = int(os.environ.get("CHECK_INTERVAL_MINUTES", 10))
     AURORA_ALERT_COOLDOWN_MINUTES = int(
         os.environ.get("AURORA_ALERT_COOLDOWN_MINUTES", 120)
