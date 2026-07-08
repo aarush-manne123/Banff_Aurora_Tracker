@@ -152,6 +152,7 @@ def get_current_conditions(lat, lon, timezone, groq_api_key=None):
     Returns current cloud cover, temperature and a short night-hours cloud
     forecast for the given coordinates, or None on failure.
     Uses a 10-minute cache to avoid rate limiting.
+    Prioritizes Groq AI if API key is provided, as weather APIs may be inaccurate.
     """
     current_time = time.time()
 
@@ -159,6 +160,16 @@ def get_current_conditions(lat, lon, timezone, groq_api_key=None):
     if _weather_cache["data"] and (current_time - _weather_cache["timestamp"] < CACHE_TTL):
         logger.debug("Using cached weather data")
         return _weather_cache["data"]
+
+    # Try Groq AI first if API key is provided (more accurate than weather APIs)
+    if groq_api_key:
+        logger.info("Using Groq AI as primary weather source")
+        groq_result = _get_from_groq(lat, lon, groq_api_key)
+        if groq_result:
+            _weather_cache["data"] = groq_result
+            _weather_cache["timestamp"] = current_time
+            return groq_result
+        logger.warning("Groq AI failed, falling back to weather APIs")
 
     params = {
         "latitude": lat,
@@ -202,14 +213,6 @@ def get_current_conditions(lat, lon, timezone, groq_api_key=None):
                 _weather_cache["data"] = fallback_result
                 _weather_cache["timestamp"] = current_time
                 return fallback_result
-            # Try Groq AI fallback
-            if groq_api_key:
-                logger.warning("Trying Groq AI fallback")
-                groq_result = _get_from_groq(lat, lon, groq_api_key)
-                if groq_result:
-                    _weather_cache["data"] = groq_result
-                    _weather_cache["timestamp"] = current_time
-                    return groq_result
             # Return cached data even if expired, as fallback
             if _weather_cache["data"]:
                 logger.info("Using expired cached data as fallback")
@@ -224,14 +227,6 @@ def get_current_conditions(lat, lon, timezone, groq_api_key=None):
                 _weather_cache["data"] = fallback_result
                 _weather_cache["timestamp"] = current_time
                 return fallback_result
-            # Try Groq AI fallback
-            if groq_api_key:
-                logger.warning("Trying Groq AI fallback")
-                groq_result = _get_from_groq(lat, lon, groq_api_key)
-                if groq_result:
-                    _weather_cache["data"] = groq_result
-                    _weather_cache["timestamp"] = current_time
-                    return groq_result
             # Return cached data even if expired, as fallback
             if _weather_cache["data"]:
                 logger.info("Using expired cached data as fallback")
