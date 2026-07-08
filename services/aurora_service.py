@@ -119,42 +119,57 @@ def get_kp_forecast(days=4):
         # Parse the forecast text
         lines = text.split('\n')
         forecast_days = []
-        current_date = None
-        kp_values = []
+        date_headers = None
+        kp_columns = []
 
         for line in lines:
-            # Look for date lines (e.g., "2026 Jul 08")
-            if line.strip() and len(line.strip().split()) == 3:
-                parts = line.strip().split()
-                if len(parts) == 3 and parts[0].isdigit() and parts[1] in ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']:
-                    # Save previous day if we have data
-                    if current_date and kp_values:
-                        kp_max = max(kp_values) if kp_values else 0
-                        label, _ = _guidance_for_kp(kp_max)
-                        forecast_days.append({
-                            "date": current_date,
-                            "kp_max": kp_max,
-                            "label": label
-                        })
-                    # Start new day
-                    current_date = line.strip()
+            # Look for the date header line (e.g., "             Jul 08       Jul 09       Jul 10")
+            if 'Jul' in line or 'Aug' in line or 'Sep' in line or 'Oct' in line or 'Nov' in line or 'Dec' in line or 'Jan' in line or 'Feb' in line or 'Mar' in line or 'Apr' in line or 'May' in line or 'Jun' in line:
+                parts = line.split()
+                # Check if this looks like a date header (contains month abbreviations)
+                months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                if any(month in parts for month in months):
+                    date_headers = parts
+
+            # Look for Kp forecast lines (e.g., "00-03UT       2.67         3.00         3.67")
+            if 'UT' in line and date_headers:
+                parts = line.split()
+                if len(parts) > 1 and any(c.replace('.', '').isdigit() for c in parts):
+                    # Extract numeric Kp values (they can be decimals like 2.67)
                     kp_values = []
+                    for part in parts[1:]:  # Skip the time column
+                        try:
+                            kp_values.append(float(part))
+                        except ValueError:
+                            continue
 
-            # Look for Kp forecast lines (e.g., "00-03UT  3  2  1  0")
-            if 'UT' in line and any(c.isdigit() for c in line):
-                # Extract Kp values from the line
-                numbers = [int(x) for x in line.split() if x.isdigit()]
-                kp_values.extend(numbers)
+                    if kp_values and date_headers:
+                        # Initialize columns if needed
+                        if not kp_columns:
+                            kp_columns = [[] for _ in range(len(kp_values))]
 
-        # Don't forget the last day
-        if current_date and kp_values:
-            kp_max = max(kp_values) if kp_values else 0
-            label, _ = _guidance_for_kp(kp_max)
-            forecast_days.append({
-                "date": current_date,
-                "kp_max": kp_max,
-                "label": label
-            })
+                        # Add values to respective columns
+                        for i, kp in enumerate(kp_values):
+                            if i < len(kp_columns):
+                                kp_columns[i].append(kp)
+
+        # Calculate max Kp for each day from the columns
+        if date_headers and kp_columns:
+            from datetime import datetime
+            current_year = datetime.now().year
+
+            for i, date_str in enumerate(date_headers):
+                if i < len(kp_columns) and kp_columns[i]:
+                    kp_max = max(kp_columns[i])
+                    label, _ = _guidance_for_kp(kp_max)
+
+                    # Format date nicely
+                    full_date = f"{current_year} {date_str}"
+                    forecast_days.append({
+                        "date": full_date,
+                        "kp_max": kp_max,
+                        "label": label
+                    })
 
         return forecast_days[:days]
     except (requests.RequestException, ValueError) as exc:
