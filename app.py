@@ -36,6 +36,10 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
+    # Configure application root for subpath deployment
+    if app.config.get("APPLICATION_ROOT"):
+        app.config["APPLICATION_ROOT"] = app.config["APPLICATION_ROOT"]
+
     db.init_app(app)
 
     with app.app_context():
