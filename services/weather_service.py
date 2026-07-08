@@ -65,12 +65,19 @@ def _get_from_groq(lat, lon, api_key):
         return None
 
     try:
-        prompt = f"""You are a weather assistant. Provide current weather conditions for Banff, Alberta (latitude {lat}, longitude {lon}).
+        from datetime import datetime, timedelta
+        today = datetime.now()
+        dates = [(today + timedelta(days=i)).strftime("%A, %B %d") for i in range(4)]
+
+        prompt = f"""You are a weather assistant. Provide current weather conditions and 4-day forecast for Banff, Alberta (latitude {lat}, longitude {lon}).
 Return ONLY a JSON object with these exact keys:
 - cloud_cover: integer 0-100 (percentage of cloud cover)
 - temperature_c: float (temperature in Celsius)
 - observed_at: string (current time in ISO format)
 - night_forecast: array of objects with "time" and "cloud_cover" keys for tonight (8pm-6am)
+- daily_forecast: array of 4 objects with "date", "cloud_cover", "temp_max", "temp_min" keys
+
+Dates to use for daily_forecast: {', '.join(dates)}
 
 Example format:
 {{
@@ -89,6 +96,12 @@ Example format:
     {{"time": "04:00", "cloud_cover": 50}},
     {{"time": "05:00", "cloud_cover": 45}},
     {{"time": "06:00", "cloud_cover": 40}}
+  ],
+  "daily_forecast": [
+    {{"date": "{dates[0]}", "cloud_cover": 45, "temp_max": 20, "temp_min": 12}},
+    {{"date": "{dates[1]}", "cloud_cover": 50, "temp_max": 18, "temp_min": 10}},
+    {{"date": "{dates[2]}", "cloud_cover": 30, "temp_max": 22, "temp_min": 14}},
+    {{"date": "{dates[3]}", "cloud_cover": 40, "temp_max": 19, "temp_min": 11}}
   ]
 }}
 
@@ -117,7 +130,7 @@ Respond with ONLY the JSON, no other text."""
         weather_data = json.loads(content)
 
         # Validate required fields
-        if not all(key in weather_data for key in ["cloud_cover", "temperature_c", "observed_at", "night_forecast"]):
+        if not all(key in weather_data for key in ["cloud_cover", "temperature_c", "observed_at", "night_forecast", "daily_forecast"]):
             logger.warning("Groq response missing required fields")
             return None
 
@@ -175,6 +188,8 @@ def get_current_conditions(lat, lon, timezone, groq_api_key=None):
         "latitude": lat,
         "longitude": lon,
         "current": "cloud_cover,temperature_2m",
+        "daily": "cloud_cover,temperature_2m_max,temperature_2m_min",
+        "forecast_days": 4,
         "timezone": timezone,
     }
 
@@ -187,12 +202,33 @@ def get_current_conditions(lat, lon, timezone, groq_api_key=None):
             data = resp.json()
 
             current = data.get("current", {})
+            daily = data.get("daily", {})
+
+            # Parse daily forecast
+            daily_forecast = []
+            if daily:
+                times = daily.get("time", [])
+                cloud_covers = daily.get("cloud_cover", [])
+                temp_maxs = daily.get("temperature_2m_max", [])
+                temp_mins = daily.get("temperature_2m_min", [])
+
+                for i, time_str in enumerate(times):
+                    if i < len(cloud_covers) and i < len(temp_maxs) and i < len(temp_mins):
+                        from datetime import datetime
+                        date_obj = datetime.fromisoformat(time_str)
+                        daily_forecast.append({
+                            "date": date_obj.strftime("%A, %B %d"),
+                            "cloud_cover": cloud_covers[i],
+                            "temp_max": temp_maxs[i],
+                            "temp_min": temp_mins[i],
+                        })
 
             result = {
                 "cloud_cover": current.get("cloud_cover"),
                 "temperature_c": current.get("temperature_2m"),
                 "observed_at": current.get("time"),
                 "night_forecast": [],  # Simplified - no hourly data to avoid rate limiting
+                "daily_forecast": daily_forecast,
             }
 
             # Cache the result
