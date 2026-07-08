@@ -38,3 +38,6 @@ class Config:
     BANFF_LAT = 51.1784
     BANFF_LON = -115.5708
     TIMEZONE = "America/Edmonton"
+
+    # Application root path for subpath deployment (e.g., "/aurora-tracker")
+    APPLICATION_ROOT = os.environ.get("APPLICATION_ROOT", "")
