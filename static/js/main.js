@@ -29,4 +29,25 @@
   }
 
   setInterval(refreshConditions, REFRESH_MS);
+
+  // Forecast tab switching
+  const forecastTabs = document.querySelectorAll('.forecast-tab');
+  const forecastDays = document.querySelectorAll('.forecast-day');
+
+  forecastTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const dayIndex = tab.getAttribute('data-day');
+
+      // Remove active class from all tabs and days
+      forecastTabs.forEach(t => t.classList.remove('active'));
+      forecastDays.forEach(d => d.classList.remove('active'));
+
+      // Add active class to clicked tab and corresponding day
+      tab.classList.add('active');
+      const targetDay = document.querySelector(`.forecast-day[data-day="${dayIndex}"]`);
+      if (targetDay) {
+        targetDay.classList.add('active');
+      }
+    });
+  });
 })();
