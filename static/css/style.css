@@ -1,614 +1,246 @@
-/* ---------------------------------------------------------------
-   Design tokens
-   ----------------------------------------------------------------
-   Palette is drawn from the aurora itself: the deep night sky it
-   appears against, the oxygen-green and nitrogen-violet of the
-   light, and a warm amber reserved for warnings.
------------------------------------------------------------------- */
-:root {
-  --bg: #0a1120;
-  --bg-panel: #121b2e;
-  --bg-panel-raised: #17233a;
-  --border: rgba(232, 237, 245, 0.09);
-  --border-strong: rgba(232, 237, 245, 0.18);
-
-  --text: #e8edf5;
-  --text-muted: #8492ac;
-  --text-faint: #566178;
-
-  --aurora-green: #45f0b3;
-  --aurora-green-dim: #2b9e79;
-  --aurora-violet: #9b7bff;
-  --amber: #ffb84d;
-  --red: #ff6b6b;
-
-  --font-display: "Space Grotesk", "Segoe UI", sans-serif;
-  --font-body: "Inter", "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", "Courier New", monospace;
-
-  --radius: 14px;
-  --radius-sm: 8px;
-  --max-width: 1080px;
-}
-
-* { box-sizing: border-box; }
-
-html { scroll-behavior: smooth; }
-
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-body);
-  line-height: 1.55;
-  -webkit-font-smoothing: antialiased;
-}
-
-.wrap {
-  max-width: var(--max-width);
-  margin: 0 auto;
-  padding: 0 24px;
-}
-
-a { color: var(--aurora-green); text-decoration: none; }
-a:hover { text-decoration: underline; }
-
-h1, h2, h3 {
-  font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  margin: 0 0 0.4em;
-}
-
-:focus-visible {
-  outline: 2px solid var(--aurora-green);
-  outline-offset: 3px;
-}
-
-/* ---------------------------------------------------------------
-   Signature element: an animated aurora ribbon fixed behind
-   everything, faint enough not to fight with content.
------------------------------------------------------------------- */
-.sky-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(155, 123, 255, 0.12), transparent),
-    var(--bg);
-}
-
-.ribbon { position: absolute; top: 0; left: 0; width: 100%; height: 60vh; opacity: 0.55; }
-
-.ribbon-path { filter: blur(18px); }
-.ribbon-a { fill: rgba(69, 240, 179, 0.16); animation: drift-a 22s ease-in-out infinite; }
-.ribbon-b { fill: rgba(155, 123, 255, 0.14); animation: drift-b 28s ease-in-out infinite; }
-
-@keyframes drift-a {
-  0%, 100% { transform: translateX(0) translateY(0); }
-  50% { transform: translateX(-30px) translateY(14px); }
-}
-@keyframes drift-b {
-  0%, 100% { transform: translateX(0) translateY(0); }
-  50% { transform: translateX(25px) translateY(-10px); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ribbon-a, .ribbon-b { animation: none; }
-}
-
-/* ---------------------------------------------------------------
-   Header
------------------------------------------------------------------- */
-.site-header {
-  position: relative;
-  z-index: 10;
-  border-bottom: 1px solid var(--border);
-  background: rgba(10, 17, 32, 0.7);
-  backdrop-filter: blur(10px);
-  position: sticky;
-  top: 0;
-}
-
-.header-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 68px;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 1.1rem;
-  color: var(--text);
-}
-.brand:hover { text-decoration: none; }
-
-.brand-mark {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--aurora-green), var(--aurora-violet));
-  box-shadow: 0 0 12px rgba(69, 240, 179, 0.6);
-}
-
-.site-nav {
-  display: flex;
-  align-items: center;
-  gap: 28px;
-  font-size: 0.92rem;
-}
-
-.site-nav a { color: var(--text-muted); }
-.site-nav a:hover { color: var(--text); text-decoration: none; }
-
-.nav-cta {
-  color: var(--bg) !important;
-  background: var(--aurora-green);
-  padding: 8px 16px;
-  border-radius: 999px;
-  font-weight: 600;
-}
-.nav-cta:hover { background: var(--aurora-green-dim); }
-
-/* ---------------------------------------------------------------
-   Hero
------------------------------------------------------------------- */
-main { position: relative; z-index: 1; }
-
-.hero { padding: 72px 24px 40px; max-width: 720px; }
-
-.eyebrow {
-  font-family: var(--font-mono);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 0.75rem;
-  color: var(--aurora-green);
-  margin: 0 0 14px;
-}
-
-.hero h1 {
-  font-size: clamp(2.1rem, 4.5vw, 3.2rem);
-  line-height: 1.1;
-}
-
-.hero-sub {
-  color: var(--text-muted);
-  font-size: 1.05rem;
-  max-width: 56ch;
-}
-
-/* ---------------------------------------------------------------
-   Panels
------------------------------------------------------------------- */
-.panel { padding: 40px 24px; scroll-margin-top: 90px; }
-
-.panel h2 { font-size: 1.6rem; }
-.section-sub { color: var(--text-muted); margin-top: -6px; margin-bottom: 28px; }
-
-/* ---------------------------------------------------------------
-   Instrument cards (conditions)
------------------------------------------------------------------- */
-.instrument-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
-.instrument-card {
-  background: linear-gradient(180deg, var(--bg-panel-raised), var(--bg-panel));
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 28px;
-}
-
-.instrument-label {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-faint);
-  margin-bottom: 14px;
-}
-
-.instrument-value {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.big-number {
-  font-family: var(--font-mono);
-  font-size: 3.4rem;
-  font-weight: 700;
-  line-height: 1;
-  background: linear-gradient(135deg, var(--aurora-green), var(--aurora-violet));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.unit { font-family: var(--font-mono); color: var(--text-muted); font-size: 1.1rem; }
-
-.instrument-tag {
-  display: inline-block;
-  margin-top: 14px;
-  padding: 4px 12px;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  background: rgba(69, 240, 179, 0.14);
-  color: var(--aurora-green);
-}
-.tag-poor, .tag-low, .tag-very-low { background: rgba(255, 107, 107, 0.14); color: var(--red); }
-.tag-fair, .tag-partly-clouded { background: rgba(255, 184, 77, 0.16); color: var(--amber); }
-.tag-good, .tag-great, .tag-excellent, .tag-exceptional, .tag-extreme, .tag-clear-enough {
-  background: rgba(69, 240, 179, 0.14); color: var(--aurora-green);
-}
-
-.instrument-detail { color: var(--text-muted); margin: 14px 0 0; font-size: 0.95rem; }
-.instrument-meta { color: var(--text-faint); font-size: 0.78rem; margin-top: 18px; font-family: var(--font-mono); }
-.instrument-error { color: var(--text-muted); font-size: 0.9rem; }
-
-.sparkline { width: 100%; height: 60px; margin-top: 18px; }
-.sparkline polyline {
-  fill: none;
-  stroke: var(--aurora-green);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.sparkline-caption { color: var(--text-faint); font-size: 0.75rem; margin: 6px 0 0; }
-
-.night-forecast { margin-top: 20px; }
-.night-forecast-label { font-size: 0.78rem; color: var(--text-faint); margin: 0 0 8px; font-family: var(--font-mono); }
-.night-bars { display: flex; align-items: flex-end; gap: 3px; height: 36px; }
-.night-bar {
-  flex: 1;
-  height: calc(var(--pct) * 1%);
-  min-height: 3px;
-  background: linear-gradient(180deg, var(--aurora-violet), var(--aurora-green));
-  border-radius: 2px 2px 0 0;
-  opacity: 0.75;
-}
-
-/* ---------------------------------------------------------------
-   Forecast tabs
------------------------------------------------------------------- */
-.forecast-tabs {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-}
-
-.forecast-tab {
-  padding: 10px 20px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  color: var(--text-muted);
-  font-family: var(--font-body);
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.forecast-tab:hover {
-  background: var(--bg-panel-raised);
-  color: var(--text);
-}
-
-.forecast-tab.active {
-  background: linear-gradient(135deg, var(--aurora-green), var(--aurora-violet));
-  color: #0a1120;
-  border-color: transparent;
-  font-weight: 600;
-}
-
-.forecast-content {
-  position: relative;
-}
-
-.forecast-day {
-  display: none;
-}
-
-.forecast-day.active {
-  display: block;
-}
-
-.forecast-card {
-  background: linear-gradient(180deg, var(--bg-panel-raised), var(--bg-panel));
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 32px;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 24px;
-}
-
-.forecast-cloud {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.forecast-aurora {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.forecast-label {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-faint);
-}
-
-.forecast-value {
-  font-family: var(--font-mono);
-  font-size: 2.2rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, var(--aurora-green), var(--aurora-violet));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.forecast-bar {
-  height: 8px;
-  background: var(--bg-panel-raised);
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.forecast-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--aurora-violet), var(--aurora-green));
-  border-radius: 999px;
-  transition: width 0.5s ease;
-}
-
-.forecast-kp {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background: var(--bg-panel);
-  border-radius: var(--radius-sm);
-  margin-top: 4px;
-}
-
-.forecast-kp-label {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  text-transform: none;
-  letter-spacing: normal;
-}
-
-.forecast-kp-value {
-  font-family: var(--font-mono);
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--aurora-green);
-}
-
-.forecast-temp {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  justify-content: center;
-}
-
-.forecast-temp-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: var(--bg-panel);
-  border-radius: var(--radius-sm);
-}
-
-.forecast-temp-item .forecast-label {
-  color: var(--text-muted);
-  text-transform: none;
-  letter-spacing: normal;
-  font-size: 0.88rem;
-}
-
-.forecast-temp-item .forecast-value {
-  font-size: 1.4rem;
-  color: var(--text);
-  background: none;
-  -webkit-background-clip: unset;
-  background-clip: unset;
-}
-
-/* ---------------------------------------------------------------
-   Locations
------------------------------------------------------------------- */
-.location-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-}
-
-.location-card {
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 22px;
-  display: flex;
-  flex-direction: column;
-}
-
-.location-card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.location-card h3 { font-size: 1.05rem; margin: 0; }
-
-.drive-time {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  color: var(--text-faint);
-  white-space: nowrap;
-}
-
-.location-facing {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  color: var(--aurora-green);
-  margin: 10px 0 0;
-}
-
-.location-notes {
-  color: var(--text-muted);
-  font-size: 0.92rem;
-  margin: 10px 0 16px;
-  flex-grow: 1;
-}
-
-.location-map-link { font-size: 0.85rem; font-weight: 600; }
-
-/* ---------------------------------------------------------------
-   Subscribe
------------------------------------------------------------------- */
-.subscribe-panel { padding-bottom: 90px; }
-
-.subscribe-inner {
-  display: grid;
-  grid-template-columns: 1fr 1.1fr;
-  gap: 48px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 40px;
-}
-
-.subscribe-copy p { color: var(--text-muted); }
-
-.subscribe-form { display: flex; flex-direction: column; gap: 18px; }
-
-.contact-toggle {
-  display: flex;
-  gap: 0;
-  background: var(--bg-panel-raised);
-  border: 1px solid var(--border-strong);
-  border-radius: 999px;
-  padding: 3px;
-  width: fit-content;
-}
-
-.toggle-btn {
-  padding: 9px 24px;
-  border: none;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--text-muted);
-  font-family: var(--font-body);
-  font-size: 0.88rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.toggle-btn:hover { color: var(--text); }
-
-.toggle-btn.active {
-  background: linear-gradient(135deg, var(--aurora-green), var(--aurora-violet));
-  color: #0a1120;
-  font-weight: 600;
-}
-
-.contact-fields { display: flex; flex-direction: column; gap: 18px; }
-
-.field { display: flex; flex-direction: column; gap: 6px; font-size: 0.88rem; color: var(--text-muted); }
-.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-
-.field input,
-.field select {
-  font-family: var(--font-body);
-  font-size: 0.95rem;
-  padding: 11px 12px;
-  background: var(--bg-panel-raised);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  color: var(--text);
-}
-
-.field input::placeholder { color: var(--text-faint); }
-.field small { color: var(--text-faint); font-size: 0.76rem; }
-
-.btn-primary {
-  margin-top: 4px;
-  padding: 13px 20px;
-  border: none;
-  border-radius: 999px;
-  background: linear-gradient(135deg, var(--aurora-green), var(--aurora-violet));
-  color: #0a1120;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 0.98rem;
-  cursor: pointer;
-  transition: filter 0.15s ease;
-}
-.btn-primary:hover { filter: brightness(1.08); }
-
-.form-fineprint { color: var(--text-faint); font-size: 0.76rem; margin: 0; }
-
-/* ---------------------------------------------------------------
-   Flash messages
------------------------------------------------------------------- */
-.flash-wrap { padding-top: 20px; }
-.flash {
-  padding: 12px 18px;
-  border-radius: var(--radius-sm);
-  font-size: 0.92rem;
-  margin-bottom: 10px;
-}
-.flash-success { background: rgba(69, 240, 179, 0.12); color: var(--aurora-green); border: 1px solid rgba(69, 240, 179, 0.3); }
-.flash-error { background: rgba(255, 107, 107, 0.12); color: var(--red); border: 1px solid rgba(255, 107, 107, 0.3); }
-
-/* ---------------------------------------------------------------
-   Footer
------------------------------------------------------------------- */
-.site-footer {
-  border-top: 1px solid var(--border);
-  padding: 28px 24px 40px;
-  position: relative;
-  z-index: 1;
-}
-.footer-inner p { margin: 4px 0; color: var(--text-faint); font-size: 0.82rem; }
-
-/* ---------------------------------------------------------------
-   Responsive
------------------------------------------------------------------- */
-@media (max-width: 860px) {
-  .location-grid { grid-template-columns: repeat(2, 1fr); }
-  .subscribe-inner { grid-template-columns: 1fr; padding: 28px; }
-  .forecast-card { grid-template-columns: 1fr; gap: 20px; }
-}
-
-@media (max-width: 640px) {
-  .site-nav { gap: 14px; }
-  .site-nav a:not(.nav-cta) { display: none; }
-  .instrument-grid { grid-template-columns: 1fr; }
-  .location-grid { grid-template-columns: 1fr; }
-  .field-row { grid-template-columns: 1fr; }
-  .hero { padding-top: 48px; }
-  .forecast-card { padding: 24px; }
-}
+{% extends "base.html" %}
+{% block title %}Aurora Banff &mdash; live conditions &amp; alerts{% endblock %}
+
+{% block content %}
+
+<section class="hero wrap">
+  <p class="eyebrow">Banff National Park &middot; live conditions</p>
+  <h1>Know the moment the sky clears.</h1>
+  <p class="hero-sub">
+    Real-time geomagnetic activity and cloud cover for the Banff area, plus the
+    spots locals actually drive to when the aurora is running.
+  </p>
+</section>
+
+<section id="conditions" class="panel wrap">
+  <div class="instrument-grid">
+
+    <div class="instrument-card instrument-kp">
+      <div class="instrument-label">Geomagnetic activity</div>
+      {% if kp_data %}
+        <div class="instrument-value">
+          <span class="big-number">{{ "%.1f"|format(kp_data.kp) }}</span>
+          <span class="unit">Kp</span>
+        </div>
+        <div class="instrument-tag tag-{{ kp_data.label|lower|replace(' ', '-') }}">{{ kp_data.label }}</div>
+        <p class="instrument-detail">{{ kp_data.detail }}</p>
+        {% if sparkline_points %}
+        <svg class="sparkline" viewBox="0 0 280 60" preserveAspectRatio="none">
+          <polyline points="{{ sparkline_points }}" />
+        </svg>
+        <p class="sparkline-caption">Last {{ kp_history|length }} readings</p>
+        {% endif %}
+        <p class="instrument-meta">As of {{ kp_data.time_tag }} UTC &middot; NOAA SWPC</p>
+      {% else %}
+        <p class="instrument-error">Aurora data is temporarily unavailable. Try refreshing shortly.</p>
+      {% endif %}
+    </div>
+
+    <div class="instrument-card instrument-cloud">
+      <div class="instrument-label">Cloud cover, Banff</div>
+      {% if weather and weather.cloud_cover is not none %}
+        <div class="instrument-value">
+          <span class="big-number">{{ "%.0f"|format(weather.cloud_cover) }}</span>
+          <span class="unit">%</span>
+        </div>
+        <div class="instrument-tag {{ 'tag-good' if weather.cloud_cover <= 30 else ('tag-fair' if weather.cloud_cover <= 60 else 'tag-poor') }}">
+          {{ 'Clear enough' if weather.cloud_cover <= 30 else ('Partly clouded' if weather.cloud_cover <= 60 else 'Mostly clouded') }}
+        </div>
+        <p class="instrument-detail">
+          {{ "%.0f"|format(weather.temperature_c) }}&deg;C right now near Banff townsite.
+        </p>
+        {% if weather.night_forecast %}
+        <div class="night-forecast">
+          <p class="night-forecast-label">Tonight&rsquo;s cloud trend</p>
+          <div class="night-bars">
+            {% for h in weather.night_forecast %}
+              <div class="night-bar" style="--pct: {{ h.cloud_cover }}%" title="{{ h.time.split('T')[1] }} &mdash; {{ h.cloud_cover }}% cloud"></div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        <p class="instrument-meta">Live &middot; Open-Meteo</p>
+      {% else %}
+        <p class="instrument-error">Weather data is temporarily unavailable. Try refreshing shortly.</p>
+      {% endif %}
+    </div>
+
+  </div>
+</section>
+
+{% if daily_forecast %}
+<section id="forecast" class="panel wrap">
+  <h2>4-Day Forecast</h2>
+  <p class="section-sub">Cloud cover and temperature outlook for the next few days.</p>
+
+  <div class="forecast-tabs">
+    {% for day in daily_forecast %}
+    <button class="forecast-tab {% if loop.first %}active{% endif %}" data-day="{{ loop.index0 }}">
+      {{ day.date }}
+    </button>
+    {% endfor %}
+  </div>
+
+  <div class="forecast-content">
+    {% for day in daily_forecast %}
+    <div class="forecast-day {% if loop.first %}active{% endif %}" data-day="{{ loop.index0 }}">
+      <div class="forecast-card">
+        <div class="forecast-cloud">
+          <span class="forecast-label">Cloud cover</span>
+          <span class="forecast-value">{{ "%.0f"|format(day.cloud_cover) }}%</span>
+          <div class="forecast-bar">
+            <div class="forecast-bar-fill" style="width: {{ day.cloud_cover }}%"></div>
+          </div>
+        </div>
+        <div class="forecast-aurora">
+          <span class="forecast-label">Aurora activity</span>
+          <span class="forecast-value">{{ day.aurora_label }}</span>
+          {% if day.aurora_kp_max is not none %}
+          <div class="forecast-kp">
+            <span class="forecast-kp-label">Max Kp</span>
+            <span class="forecast-kp-value">{{ "%.1f"|format(day.aurora_kp_max) }}</span>
+          </div>
+          {% endif %}
+        </div>
+        <div class="forecast-temp">
+          <div class="forecast-temp-item">
+            <span class="forecast-label">High</span>
+            <span class="forecast-value">{{ "%.0f"|format(day.temp_max) }}°C</span>
+          </div>
+          <div class="forecast-temp-item">
+            <span class="forecast-label">Low</span>
+            <span class="forecast-value">{{ "%.0f"|format(day.temp_min) }}°C</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section id="locations" class="panel wrap">
+  <h2>Where to go tonight</h2>
+  <p class="section-sub">All within a short drive of the townsite, ordered from closest to farthest.</p>
+
+  <div class="location-grid">
+    {% for loc in locations %}
+    <article class="location-card">
+      <div class="location-card-top">
+        <h3>{{ loc.name }}</h3>
+        <span class="drive-time">{{ loc.drive_minutes }} min drive</span>
+      </div>
+      <p class="location-facing">Faces {{ loc.facing }}</p>
+      <p class="location-notes">{{ loc.notes }}</p>
+      <a class="location-map-link" href="https://www.google.com/maps/search/?api=1&query={{ loc.lat }},{{ loc.lon }}" target="_blank" rel="noopener">
+        Open in maps &rarr;
+      </a>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section id="subscribe" class="panel wrap subscribe-panel">
+  <div class="subscribe-inner">
+    <div class="subscribe-copy">
+      <h2>Get notified when it's worth going outside</h2>
+      <p>
+        Set your own thresholds. We'll notify you when geomagnetic activity and cloud
+        cover both line up, and again whenever the sky changes significantly.
+      </p>
+    </div>
+
+    <form class="subscribe-form" action="{{ url_for('subscribe') }}" method="POST">
+
+      <div class="contact-toggle">
+        <button type="button" class="toggle-btn active" data-method="email">Email</button>
+        <button type="button" class="toggle-btn" data-method="phone">Phone</button>
+      </div>
+      <input type="hidden" name="contact_method" id="contact_method" value="email">
+
+      <div class="contact-fields" id="email-fields">
+        <label class="field">
+          <span>Email address</span>
+          <input type="email" name="email" placeholder="you@example.com">
+        </label>
+      </div>
+
+      <div class="contact-fields" id="phone-fields" style="display:none;">
+        <label class="field">
+          <span>Phone number</span>
+          <input type="tel" name="phone_number" placeholder="+14035551234">
+          <small>Include your country code, e.g. +1 for Canada/US.</small>
+        </label>
+
+        <label class="field">
+          <span>Mobile carrier (for free SMS via email gateway)</span>
+          <select name="carrier_domain">
+            <option value="">-- Select carrier (optional) --</option>
+            <option value="vtext.com">Verizon (vtext.com)</option>
+            <option value="txt.att.net">AT&T (txt.att.net)</option>
+            <option value="tmomail.net">T-Mobile (tmomail.net)</option>
+            <option value="messaging.sprintpcs.com">Sprint (messaging.sprintpcs.com)</option>
+            <option value="pm.sprint.com">Sprint (pm.sprint.com)</option>
+            <option value="myboostmobile.com">Boost Mobile (myboostmobile.com)</option>
+            <option value="vmobl.com">Virgin Mobile (vmobl.com)</option>
+            <option value="sms.mycricket.com">Cricket (sms.mycricket.com)</option>
+            <option value="text.republicwireless.com">Republic Wireless (text.republicwireless.com)</option>
+            <option value="msg.fi.google.com">Google Fi (msg.fi.google.com)</option>
+            <option value="mail.mymetropcs.com">Metro PCS (mail.mymetropcs.com)</option>
+            <option value="message.alltel.com">Alltel (message.alltel.com)</option>
+            <option value="cingularme.com">Cingular (cingularme.com)</option>
+            <option value="dutypage.com">DutyPage (dutypage.com)</option>
+            <option value="page.nextel.com">Nextel (page.nextel.com)</option>
+            <option value="qwestmp.com">Qwest (qwestmp.com)</option>
+            <option value="pcs.rogers.com">Rogers (pcs.rogers.com)</option>
+            <option value="fido.ca">Fido (fido.ca)</option>
+            <option value="bell.ca">Bell (bell.ca)</option>
+            <option value="txt.bell.ca">Bell (txt.bell.ca)</option>
+            <option value="sms.telus.com">Telus (sms.telus.com)</option>
+            <option value="msg.koodomobile.com">Koodo (msg.koodomobile.com)</option>
+            <option value="text.mts.net">MTS (text.mts.net)</option>
+            <option value="sms.sasktel.com">SaskTel (sms.sasktel.com)</option>
+            <option value="mobiletxt.ca">Virgin Mobile Canada (mobiletxt.ca)</option>
+            <option value="fido.ca">Fido Canada (fido.ca)</option>
+          </select>
+          <small>Leave blank to use Twilio (requires account). Select your carrier for free email-to-SMS.</small>
+        </label>
+      </div>
+
+      <div class="field-row">
+        <label class="field">
+          <span>Alert me when Kp reaches</span>
+          <select name="kp_threshold">
+            <option value="3">3 &mdash; Fair</option>
+            <option value="4" selected>4 &mdash; Good</option>
+            <option value="5">5 &mdash; Great</option>
+            <option value="6">6 &mdash; Excellent</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>And cloud cover is under</span>
+          <select name="cloud_threshold">
+            <option value="30">30%</option>
+            <option value="50" selected>50%</option>
+            <option value="70">70%</option>
+          </select>
+        </label>
+      </div>
+
+      <label class="field">
+        <span>Also notify me if cloud cover changes by at least</span>
+        <select name="cloud_change_threshold">
+          <option value="15">15 percentage points</option>
+          <option value="25" selected>25 percentage points</option>
+          <option value="40">40 percentage points</option>
+        </select>
+      </label>
+
+      <button type="submit" class="btn-primary">Subscribe</button>
+      <p class="form-fineprint">Standard messaging rates may apply for SMS. You can unsubscribe at any time.</p>
+    </form>
+  </div>
+</section>
+
+{% endblock %}
