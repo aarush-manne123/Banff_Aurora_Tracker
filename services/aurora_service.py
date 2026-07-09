@@ -111,62 +111,81 @@ def get_kp_forecast(days=4):
     Parses NOAA's 3-day forecast text to extract predicted Kp values.
     Returns a list of {"date": str, "kp_max": float, "label": str} for each day.
     """
+    import re
+
     try:
         resp = requests.get(FORECAST_URL, timeout=10)
         resp.raise_for_status()
         text = resp.text
 
-        # Parse the forecast text
         lines = text.split('\n')
         forecast_days = []
-        date_headers = None
+        dates = []
         kp_columns = []
+        in_kp_section = False
+
+        # Strict pattern: only match real UT time-range lines like "00-03UT"
+        ut_line_re = re.compile(r'^\s*\d{2}-\d{2}UT\b')
+        months = {'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'}
 
         for line in lines:
-            # Look for the date header line (e.g., "             Jul 08       Jul 09       Jul 10")
-            if 'Jul' in line or 'Aug' in line or 'Sep' in line or 'Oct' in line or 'Nov' in line or 'Dec' in line or 'Jan' in line or 'Feb' in line or 'Mar' in line or 'Apr' in line or 'May' in line or 'Jun' in line:
-                parts = line.split()
-                # Check if this looks like a date header (contains month abbreviations)
-                months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-                if any(month in parts for month in months):
-                    date_headers = parts
+            # Only start parsing inside the Kp breakdown table
+            if 'Kp index breakdown' in line:
+                in_kp_section = True
+                continue
 
-            # Look for Kp forecast lines (e.g., "00-03UT       2.67         3.00         3.67")
-            if 'UT' in line and date_headers:
-                parts = line.split()
-                if len(parts) > 1 and any(c.replace('.', '').isdigit() for c in parts):
-                    # Extract numeric Kp values (they can be decimals like 2.67)
-                    kp_values = []
-                    for part in parts[1:]:  # Skip the time column
-                        try:
-                            kp_values.append(float(part))
-                        except ValueError:
-                            continue
+            if not in_kp_section:
+                continue
 
-                    if kp_values and date_headers:
-                        # Initialize columns if needed
-                        if not kp_columns:
-                            kp_columns = [[] for _ in range(len(kp_values))]
+            stripped = line.strip()
 
-                        # Add values to respective columns
-                        for i, kp in enumerate(kp_values):
-                            if i < len(kp_columns):
-                                kp_columns[i].append(kp)
+            # Blank line: if we already collected Kp data the section is over
+            if not stripped:
+                if kp_columns and any(kp_columns):
+                    break
+                continue
 
-        # Calculate max Kp for each day from the columns
-        if date_headers and kp_columns:
+            # Parse the date header, pairing month + day tokens properly
+            # e.g. "Jul 09       Jul 10       Jul 11" -> ["Jul 09", "Jul 10", "Jul 11"]
+            if not dates:
+                parts = stripped.split()
+                i = 0
+                while i < len(parts) - 1:
+                    if parts[i] in months and parts[i + 1].isdigit():
+                        dates.append(f"{parts[i]} {parts[i + 1]}")
+                        i += 2
+                    else:
+                        i += 1
+                if dates:
+                    kp_columns = [[] for _ in range(len(dates))]
+                continue
+
+            # Parse UT lines (e.g., "00-03UT  2.67  3.67  3.67")
+            if ut_line_re.match(line):
+                parts = stripped.split()
+                for idx, part in enumerate(parts[1:]):
+                    try:
+                        kp = float(part)
+                    except ValueError:
+                        continue
+                    if idx < len(kp_columns):
+                        kp_columns[idx].append(kp)
+            else:
+                # Any other non-blank line means the table ended
+                break
+
+        # Build forecast from the parsed columns
+        if dates and kp_columns:
             from datetime import datetime
             current_year = datetime.now().year
 
-            for i, date_str in enumerate(date_headers):
+            for i, date_str in enumerate(dates):
                 if i < len(kp_columns) and kp_columns[i]:
                     kp_max = max(kp_columns[i])
                     label, _ = _guidance_for_kp(kp_max)
-
-                    # Format date nicely
-                    full_date = f"{current_year} {date_str}"
                     forecast_days.append({
-                        "date": full_date,
+                        "date": f"{current_year} {date_str}",
                         "kp_max": kp_max,
                         "label": label
                     })
