@@ -503,6 +503,39 @@ main { position: relative; z-index: 1; }
 
 .subscribe-form { display: flex; flex-direction: column; gap: 18px; }
 
+.contact-toggle {
+  display: flex;
+  gap: 0;
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  padding: 3px;
+  width: fit-content;
+}
+
+.toggle-btn {
+  padding: 9px 24px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggle-btn:hover { color: var(--text); }
+
+.toggle-btn.active {
+  background: linear-gradient(135deg, var(--aurora-green), var(--aurora-violet));
+  color: #0a1120;
+  font-weight: 600;
+}
+
+.contact-fields { display: flex; flex-direction: column; gap: 18px; }
+
 .field { display: flex; flex-direction: column; gap: 6px; font-size: 0.88rem; color: var(--text-muted); }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
