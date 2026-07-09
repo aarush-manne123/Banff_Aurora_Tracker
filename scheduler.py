@@ -50,6 +50,57 @@ def check_conditions_and_notify(app):
         db.session.commit()
 
 
+def _send_notification(app, sub, body, subject=None):
+    """
+    Deliver a notification to a subscriber via their preferred channel
+    (email or SMS). Returns True if any delivery succeeded.
+    """
+    from flask import url_for
+
+    sent = False
+
+    # Email subscribers
+    if sub.email:
+        unsubscribe_url = url_for(
+            "unsubscribe", token=sub.unsubscribe_token, _external=True
+        )
+        sent = sms_service.send_alert_email(
+            app.config["SMTP_SERVER"],
+            app.config["SMTP_PORT"],
+            app.config["SMTP_EMAIL"],
+            app.config["SMTP_PASSWORD"],
+            sub.email,
+            subject or "Aurora Banff Alert",
+            body,
+            unsubscribe_url,
+        )
+
+    # Phone subscribers
+    if sub.phone_number and not sent:
+        # Try email-to-SMS if subscriber has carrier domain set
+        if sub.carrier_domain:
+            sent = sms_service.send_sms_via_email(
+                app.config["SMTP_SERVER"],
+                app.config["SMTP_PORT"],
+                app.config["SMTP_EMAIL"],
+                app.config["SMTP_PASSWORD"],
+                sub.phone_number,
+                sub.carrier_domain,
+                body,
+            )
+        # Fall back to Twilio if email-to-SMS wasn't used or failed
+        if not sent:
+            sent = sms_service.send_sms(
+                app.config["TWILIO_ACCOUNT_SID"],
+                app.config["TWILIO_AUTH_TOKEN"],
+                app.config["TWILIO_FROM_NUMBER"],
+                sub.phone_number,
+                body,
+            )
+
+    return sent
+
+
 def _maybe_send_aurora_alert(app, sub, kp, kp_data, cloud_cover, cooldown_minutes):
     conditions_met = kp >= sub.kp_threshold and cloud_cover <= sub.cloud_threshold
     if not conditions_met:
@@ -62,30 +113,10 @@ def _maybe_send_aurora_alert(app, sub, kp, kp_data, cloud_cover, cooldown_minute
     body = (
         f"Aurora Banff Alert: Kp {kp:.1f} ({kp_data['label']}) and only "
         f"{cloud_cover:.0f}% cloud cover near Banff right now. Good conditions "
-        f"to head out and look north. Reply STOP to unsubscribe."
+        f"to head out and look north."
     )
 
-    sent = False
-    # Try email-to-SMS if subscriber has carrier domain set
-    if sub.carrier_domain:
-        sent = sms_service.send_sms_via_email(
-            app.config["SMTP_SERVER"],
-            app.config["SMTP_PORT"],
-            app.config["SMTP_EMAIL"],
-            app.config["SMTP_PASSWORD"],
-            sub.phone_number,
-            sub.carrier_domain,
-            body,
-        )
-    # Fall back to Twilio if email-to-SMS wasn't used or failed
-    if not sent:
-        sent = sms_service.send_sms(
-            app.config["TWILIO_ACCOUNT_SID"],
-            app.config["TWILIO_AUTH_TOKEN"],
-            app.config["TWILIO_FROM_NUMBER"],
-            sub.phone_number,
-            body,
-        )
+    sent = _send_notification(app, sub, body, subject="Aurora Banff Alert")
     if sent:
         sub.last_aurora_alert_at = datetime.now(timezone.utc)
 
@@ -107,30 +138,10 @@ def _maybe_send_cloud_alert(app, sub, cloud_cover, cooldown_minutes):
     direction = "cleared up" if cloud_cover < sub.last_cloud_cover else "clouded over"
     body = (
         f"Aurora Banff sky update: cloud cover has {direction} - now "
-        f"{cloud_cover:.0f}% (was {sub.last_cloud_cover:.0f}%). Reply STOP to unsubscribe."
+        f"{cloud_cover:.0f}% (was {sub.last_cloud_cover:.0f}%)."
     )
 
-    sent = False
-    # Try email-to-SMS if subscriber has carrier domain set
-    if sub.carrier_domain:
-        sent = sms_service.send_sms_via_email(
-            app.config["SMTP_SERVER"],
-            app.config["SMTP_PORT"],
-            app.config["SMTP_EMAIL"],
-            app.config["SMTP_PASSWORD"],
-            sub.phone_number,
-            sub.carrier_domain,
-            body,
-        )
-    # Fall back to Twilio if email-to-SMS wasn't used or failed
-    if not sent:
-        sent = sms_service.send_sms(
-            app.config["TWILIO_ACCOUNT_SID"],
-            app.config["TWILIO_AUTH_TOKEN"],
-            app.config["TWILIO_FROM_NUMBER"],
-            sub.phone_number,
-            body,
-        )
+    sent = _send_notification(app, sub, body, subject="Aurora Banff Sky Update")
     if sent:
         sub.last_cloud_alert_at = datetime.now(timezone.utc)
     sub.last_cloud_cover = cloud_cover
