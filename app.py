@@ -1,6 +1,7 @@
 import atexit
 import logging
 import re
+import threading
 
 from flask import Flask, flash, jsonify, redirect, render_template, request, url_for
 
@@ -11,6 +12,7 @@ from services import aurora_service, sms_service, weather_service
 from services.locations import VIEWING_LOCATIONS
 
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 PHONE_RE = re.compile(r"^\+[1-9]\d{7,14}$")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -37,14 +39,37 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # Configure application root for subpath deployment
-    if app.config.get("APPLICATION_ROOT"):
-        app.config["APPLICATION_ROOT"] = app.config["APPLICATION_ROOT"]
-
     db.init_app(app)
 
     with app.app_context():
         db.create_all()
+
+    def _send_confirmation_email_async(app, to_email, unsubscribe_token):
+        """
+        Runs in a background thread so a slow or blocked mail provider can
+        never hold up the HTTP response (this is what caused the previous
+        worker-timeout crash on Render).
+        """
+        with app.app_context():
+            unsubscribe_url = url_for(
+                "unsubscribe", token=unsubscribe_token, _external=True
+            )
+            try:
+                sms_service.send_confirmation_email(
+                    app.config["SMTP_SERVER"],
+                    app.config["SMTP_PORT"],
+                    app.config["SMTP_EMAIL"],
+                    app.config["SMTP_PASSWORD"],
+                    to_email,
+                    unsubscribe_url,
+                    brevo_api_key=app.config.get("BREVO_API_KEY"),
+                    brevo_sender_name=app.config.get("BREVO_SENDER_NAME"),
+                )
+            except Exception:
+                # Belt and suspenders: sms_service already catches its own
+                # errors and returns False, but a background thread with an
+                # uncaught exception would otherwise vanish silently.
+                logger.exception("Unexpected error sending confirmation email")
 
     @app.route("/")
     def index():
@@ -78,7 +103,6 @@ def create_app():
             sparkline_points=sparkline_points,
             daily_forecast=daily_forecast,
         )
-
 
     @app.route("/api/status")
     def api_status():
@@ -124,8 +148,6 @@ def create_app():
         if not existing and phone_number:
             existing = Subscriber.query.filter_by(phone_number=phone_number).first()
 
-        is_new = existing is None
-
         if existing:
             existing.email = email or existing.email
             existing.phone_number = phone_number or existing.phone_number
@@ -152,19 +174,14 @@ def create_app():
                 "success",
             )
 
-        # Send confirmation email for email subscribers
+        # Fire the confirmation email off in a background thread so the
+        # response comes back immediately regardless of mail-provider speed.
         if email:
-            unsubscribe_url = url_for(
-                "unsubscribe", token=existing.unsubscribe_token, _external=True
-            )
-            sms_service.send_confirmation_email(
-                app.config["SMTP_SERVER"],
-                app.config["SMTP_PORT"],
-                app.config["SMTP_EMAIL"],
-                app.config["SMTP_PASSWORD"],
-                email,
-                unsubscribe_url,
-            )
+            threading.Thread(
+                target=_send_confirmation_email_async,
+                args=(app, email, existing.unsubscribe_token),
+                daemon=True,
+            ).start()
 
         return redirect(url_for("index") + "#subscribe")
 
@@ -192,4 +209,3 @@ if __name__ == "__main__":
     _dev_scheduler = start_scheduler(app)
     atexit.register(lambda: _dev_scheduler.shutdown(wait=False))
     app.run(debug=True, host="0.0.0.0", port=1324)
-
