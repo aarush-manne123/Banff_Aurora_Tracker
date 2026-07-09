@@ -50,4 +50,28 @@
       }
     });
   });
+  // Contact method toggle (email / phone)
+  const toggleBtns = document.querySelectorAll('.toggle-btn');
+  const contactMethodInput = document.getElementById('contact_method');
+  const emailFields = document.getElementById('email-fields');
+  const phoneFields = document.getElementById('phone-fields');
+
+  toggleBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const method = btn.getAttribute('data-method');
+
+      toggleBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      if (contactMethodInput) contactMethodInput.value = method;
+
+      if (method === 'email') {
+        if (emailFields) emailFields.style.display = '';
+        if (phoneFields) phoneFields.style.display = 'none';
+      } else {
+        if (emailFields) emailFields.style.display = 'none';
+        if (phoneFields) phoneFields.style.display = '';
+      }
+    });
+  });
 })();
