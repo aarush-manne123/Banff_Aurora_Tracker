@@ -14,7 +14,8 @@ class Subscriber(db.Model):
     __tablename__ = "subscribers"
 
     id = db.Column(db.Integer, primary_key=True)
-    phone_number = db.Column(db.String(20), unique=True, nullable=False)
+    phone_number = db.Column(db.String(20), unique=True, nullable=True)
+    email = db.Column(db.String(120), unique=True, nullable=True)
     carrier_domain = db.Column(db.String(50), nullable=True)  # For email-to-SMS gateway
 
     # Alert when Kp index reaches this value or higher
@@ -37,5 +38,11 @@ class Subscriber(db.Model):
 
     created_at = db.Column(db.DateTime, default=_now)
 
+    @property
+    def contact_display(self):
+        if self.email and self.phone_number:
+            return f"{self.email} / {self.phone_number}"
+        return self.email or self.phone_number or "unknown"
+
     def __repr__(self):
-        return f"<Subscriber {self.phone_number}>"
+        return f"<Subscriber {self.contact_display}>"
