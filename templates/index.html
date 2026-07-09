@@ -1,230 +1,229 @@
-{% extends "base.html" %}
-{% block title %}Aurora Banff &mdash; live conditions &amp; alerts{% endblock %}
-
-{% block content %}
-
-<section class="hero wrap">
-  <p class="eyebrow">Banff National Park &middot; live conditions</p>
-  <h1>Know the moment the sky clears.</h1>
-  <p class="hero-sub">
-    Real-time geomagnetic activity and cloud cover for the Banff area, plus the
-    spots locals actually drive to when the aurora is running.
-  </p>
-</section>
-
-<section id="conditions" class="panel wrap">
-  <div class="instrument-grid">
-
-    <div class="instrument-card instrument-kp">
-      <div class="instrument-label">Geomagnetic activity</div>
-      {% if kp_data %}
-        <div class="instrument-value">
-          <span class="big-number">{{ "%.1f"|format(kp_data.kp) }}</span>
-          <span class="unit">Kp</span>
-        </div>
-        <div class="instrument-tag tag-{{ kp_data.label|lower|replace(' ', '-') }}">{{ kp_data.label }}</div>
-        <p class="instrument-detail">{{ kp_data.detail }}</p>
-        {% if sparkline_points %}
-        <svg class="sparkline" viewBox="0 0 280 60" preserveAspectRatio="none">
-          <polyline points="{{ sparkline_points }}" />
-        </svg>
-        <p class="sparkline-caption">Last {{ kp_history|length }} readings</p>
-        {% endif %}
-        <p class="instrument-meta">As of {{ kp_data.time_tag }} UTC &middot; NOAA SWPC</p>
-      {% else %}
-        <p class="instrument-error">Aurora data is temporarily unavailable. Try refreshing shortly.</p>
-      {% endif %}
-    </div>
-
-    <div class="instrument-card instrument-cloud">
-      <div class="instrument-label">Cloud cover, Banff</div>
-      {% if weather and weather.cloud_cover is not none %}
-        <div class="instrument-value">
-          <span class="big-number">{{ "%.0f"|format(weather.cloud_cover) }}</span>
-          <span class="unit">%</span>
-        </div>
-        <div class="instrument-tag {{ 'tag-good' if weather.cloud_cover <= 30 else ('tag-fair' if weather.cloud_cover <= 60 else 'tag-poor') }}">
-          {{ 'Clear enough' if weather.cloud_cover <= 30 else ('Partly clouded' if weather.cloud_cover <= 60 else 'Mostly clouded') }}
-        </div>
-        <p class="instrument-detail">
-          {{ "%.0f"|format(weather.temperature_c) }}&deg;C right now near Banff townsite.
-        </p>
-        {% if weather.night_forecast %}
-        <div class="night-forecast">
-          <p class="night-forecast-label">Tonight&rsquo;s cloud trend</p>
-          <div class="night-bars">
-            {% for h in weather.night_forecast %}
-              <div class="night-bar" style="--pct: {{ h.cloud_cover }}%" title="{{ h.time.split('T')[1] }} &mdash; {{ h.cloud_cover }}% cloud"></div>
+<html>
+   <head></head>
+   <body>
+      {% extends "base.html" %}
+      {% block title %}Aurora Banff — live conditions &amp; alerts{% endblock %}
+      {% block content %}
+      <section class="hero wrap">
+         <p class="eyebrow">Banff National Park · live conditions</p>
+         <h1>Know the moment the sky clears.</h1>
+         <p class="hero-sub">
+            Real-time geomagnetic activity and cloud cover for the Banff area, plus the
+            spots locals actually drive to when the aurora is running.
+         </p>
+      </section>
+      <section id="conditions" class="panel wrap">
+         <div class="instrument-grid">
+            <div class="instrument-card instrument-kp">
+               <div class="instrument-label">Geomagnetic activity</div>
+               {% if kp_data %}
+               <div class="instrument-value">
+                  <span class="big-number">{{ "%.1f"|format(kp_data.kp) }}</span>
+                  <span class="unit">Kp</span>
+               </div>
+               <div class="instrument-tag tag-{{ kp_data.label|lower|replace(' ', '-') }}">{{ kp_data.label }}</div>
+               <p class="instrument-detail">{{ kp_data.detail }}</p>
+               {% if sparkline_points %}
+               <svg class="sparkline" viewBox="0 0 280 60" preserveAspectRatio="none">
+                  <polyline points="{{ sparkline_points }}"></polyline>
+               </svg>
+               <p class="sparkline-caption">Last {{ kp_history|length }} readings</p>
+               {% endif %}
+               <p class="instrument-meta">As of {{ kp_data.time_tag }} UTC · NOAA SWPC</p>
+               {% else %}
+               <p class="instrument-error">Aurora data is temporarily unavailable. Try refreshing shortly.</p>
+               {% endif %}
+            </div>
+            <div class="instrument-card instrument-cloud">
+               <div class="instrument-label">Cloud cover, Banff</div>
+               {% if weather and weather.cloud_cover is not none %}
+               <div class="instrument-value">
+                  <span class="big-number">{{ "%.0f"|format(weather.cloud_cover) }}</span>
+                  <span class="unit">%</span>
+               </div>
+               <div class="instrument-tag {{ 'tag-good' if weather.cloud_cover &lt;= 30 else ('tag-fair' if weather.cloud_cover &lt;= 60 else 'tag-poor') }}">
+                  {{ 'Clear enough' if weather.cloud_cover &lt;= 30 else ('Partly clouded' if weather.cloud_cover &lt;= 60 else 'Mostly clouded') }}
+               </div>
+               <p class="instrument-detail">
+                  {{ "%.0f"|format(weather.temperature_c) }}°C right now near Banff townsite.
+               </p>
+               {% if weather.night_forecast %}
+               <div class="night-forecast">
+                  <p class="night-forecast-label">Tonight’s cloud trend</p>
+                  <div class="night-bars">
+                     {% for h in weather.night_forecast %}
+                     <div class="night-bar" style="--pct: {{ h.cloud_cover }}%" title="{{ h.time.split('T')[1] }} — {{ h.cloud_cover }}% cloud"></div>
+                     {% endfor %}
+                  </div>
+               </div>
+               {% endif %}
+               <p class="instrument-meta">Live · Open-Meteo</p>
+               {% else %}
+               <p class="instrument-error">Weather data is temporarily unavailable. Try refreshing shortly.</p>
+               {% endif %}
+            </div>
+         </div>
+      </section>
+      {% if daily_forecast %}
+      <section id="forecast" class="panel wrap">
+         <h2>4-Day Forecast</h2>
+         <p class="section-sub">Cloud cover and temperature outlook for the next few days.</p>
+         <div class="forecast-tabs">
+            {% for day in daily_forecast %}
+            <button class="forecast-tab {% if loop.first %}active{% endif %}" data-day="{{ loop.index0 }}">
+            {{ day.date }}
+            </button>
             {% endfor %}
-          </div>
-        </div>
-        {% endif %}
-        <p class="instrument-meta">Live &middot; Open-Meteo</p>
-      {% else %}
-        <p class="instrument-error">Weather data is temporarily unavailable. Try refreshing shortly.</p>
+         </div>
+         <div class="forecast-content">
+            {% for day in daily_forecast %}
+            <div class="forecast-day {% if loop.first %}active{% endif %}" data-day="{{ loop.index0 }}">
+               <div class="forecast-card">
+                  <div class="forecast-cloud">
+                     <span class="forecast-label">Cloud cover</span>
+                     <span class="forecast-value">{{ "%.0f"|format(day.cloud_cover) }}%</span>
+                     <div class="forecast-bar">
+                        <div class="forecast-bar-fill" style="width: {{ day.cloud_cover }}%"></div>
+                     </div>
+                  </div>
+                  <div class="forecast-aurora">
+                     <span class="forecast-label">Aurora activity</span>
+                     <span class="forecast-value">{{ day.aurora_label }}</span>
+                     {% if day.aurora_kp_max is not none %}
+                     <div class="forecast-kp">
+                        <span class="forecast-kp-label">Max Kp</span>
+                        <span class="forecast-kp-value">{{ "%.1f"|format(day.aurora_kp_max) }}</span>
+                     </div>
+                     {% endif %}
+                  </div>
+                  <div class="forecast-temp">
+                     <div class="forecast-temp-item">
+                        <span class="forecast-label">High</span>
+                        <span class="forecast-value">{{ "%.0f"|format(day.temp_max) }}°C</span>
+                     </div>
+                     <div class="forecast-temp-item">
+                        <span class="forecast-label">Low</span>
+                        <span class="forecast-value">{{ "%.0f"|format(day.temp_min) }}°C</span>
+                     </div>
+                  </div>
+               </div>
+            </div>
+            {% endfor %}
+         </div>
+      </section>
       {% endif %}
-    </div>
-
-  </div>
-</section>
-
-{% if daily_forecast %}
-<section id="forecast" class="panel wrap">
-  <h2>4-Day Forecast</h2>
-  <p class="section-sub">Cloud cover and temperature outlook for the next few days.</p>
-
-  <div class="forecast-tabs">
-    {% for day in daily_forecast %}
-    <button class="forecast-tab {% if loop.first %}active{% endif %}" data-day="{{ loop.index0 }}">
-      {{ day.date }}
-    </button>
-    {% endfor %}
-  </div>
-
-  <div class="forecast-content">
-    {% for day in daily_forecast %}
-    <div class="forecast-day {% if loop.first %}active{% endif %}" data-day="{{ loop.index0 }}">
-      <div class="forecast-card">
-        <div class="forecast-cloud">
-          <span class="forecast-label">Cloud cover</span>
-          <span class="forecast-value">{{ "%.0f"|format(day.cloud_cover) }}%</span>
-          <div class="forecast-bar">
-            <div class="forecast-bar-fill" style="width: {{ day.cloud_cover }}%"></div>
-          </div>
-        </div>
-        <div class="forecast-aurora">
-          <span class="forecast-label">Aurora activity</span>
-          <span class="forecast-value">{{ day.aurora_label }}</span>
-          {% if day.aurora_kp_max is not none %}
-          <div class="forecast-kp">
-            <span class="forecast-kp-label">Max Kp</span>
-            <span class="forecast-kp-value">{{ "%.1f"|format(day.aurora_kp_max) }}</span>
-          </div>
-          {% endif %}
-        </div>
-        <div class="forecast-temp">
-          <div class="forecast-temp-item">
-            <span class="forecast-label">High</span>
-            <span class="forecast-value">{{ "%.0f"|format(day.temp_max) }}°C</span>
-          </div>
-          <div class="forecast-temp-item">
-            <span class="forecast-label">Low</span>
-            <span class="forecast-value">{{ "%.0f"|format(day.temp_min) }}°C</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-</section>
-{% endif %}
-
-<section id="locations" class="panel wrap">
-  <h2>Where to go tonight</h2>
-  <p class="section-sub">All within a short drive of the townsite, ordered from closest to farthest.</p>
-
-  <div class="location-grid">
-    {% for loc in locations %}
-    <article class="location-card">
-      <div class="location-card-top">
-        <h3>{{ loc.name }}</h3>
-        <span class="drive-time">{{ loc.drive_minutes }} min drive</span>
-      </div>
-      <p class="location-facing">Faces {{ loc.facing }}</p>
-      <p class="location-notes">{{ loc.notes }}</p>
-      <a class="location-map-link" href="https://www.google.com/maps/search/?api=1&query={{ loc.lat }},{{ loc.lon }}" target="_blank" rel="noopener">
-        Open in maps &rarr;
-      </a>
-    </article>
-    {% endfor %}
-  </div>
-</section>
-
-<section id="subscribe" class="panel wrap subscribe-panel">
-  <div class="subscribe-inner">
-    <div class="subscribe-copy">
-      <h2>Get a text when it's worth going outside</h2>
-      <p>
-        Set your own thresholds. We'll text you when geomagnetic activity and cloud
-        cover both line up, and again whenever the sky changes significantly.
-      </p>
-    </div>
-
-    <form class="subscribe-form" action="{{ url_for('subscribe') }}" method="POST">
-      <label class="field">
-        <span>Phone number</span>
-        <input type="tel" name="phone_number" placeholder="+14035551234" required>
-        <small>Include your country code, e.g. +1 for Canada/US.</small>
-      </label>
-
-      <label class="field">
-        <span>Mobile carrier (for free SMS via email gateway)</span>
-        <select name="carrier_domain">
-          <option value="">-- Select carrier (optional) --</option>
-          <option value="vtext.com">Verizon (vtext.com)</option>
-          <option value="txt.att.net">AT&T (txt.att.net)</option>
-          <option value="tmomail.net">T-Mobile (tmomail.net)</option>
-          <option value="messaging.sprintpcs.com">Sprint (messaging.sprintpcs.com)</option>
-          <option value="pm.sprint.com">Sprint (pm.sprint.com)</option>
-          <option value="myboostmobile.com">Boost Mobile (myboostmobile.com)</option>
-          <option value="vmobl.com">Virgin Mobile (vmobl.com)</option>
-          <option value="sms.mycricket.com">Cricket (sms.mycricket.com)</option>
-          <option value="text.republicwireless.com">Republic Wireless (text.republicwireless.com)</option>
-          <option value="msg.fi.google.com">Google Fi (msg.fi.google.com)</option>
-          <option value="mail.mymetropcs.com">Metro PCS (mail.mymetropcs.com)</option>
-          <option value="message.alltel.com">Alltel (message.alltel.com)</option>
-          <option value="cingularme.com">Cingular (cingularme.com)</option>
-          <option value="dutypage.com">DutyPage (dutypage.com)</option>
-          <option value="page.nextel.com">Nextel (page.nextel.com)</option>
-          <option value="qwestmp.com">Qwest (qwestmp.com)</option>
-          <option value="pcs.rogers.com">Rogers (pcs.rogers.com)</option>
-          <option value="fido.ca">Fido (fido.ca)</option>
-          <option value="bell.ca">Bell (bell.ca)</option>
-          <option value="txt.bell.ca">Bell (txt.bell.ca)</option>
-          <option value="sms.telus.com">Telus (sms.telus.com)</option>
-          <option value="msg.koodomobile.com">Koodo (msg.koodomobile.com)</option>
-          <option value="text.mts.net">MTS (text.mts.net)</option>
-          <option value="sms.sasktel.com">SaskTel (sms.sasktel.com)</option>
-          <option value="mobiletxt.ca">Virgin Mobile Canada (mobiletxt.ca)</option>
-          <option value="fido.ca">Fido Canada (fido.ca)</option>
-        </select>
-        <small>Leave blank to use Twilio (requires account). Select your carrier for free email-to-SMS.</small>
-      </label>
-
-      <div class="field-row">
-        <label class="field">
-          <span>Alert me when Kp reaches</span>
-          <select name="kp_threshold">
-            <option value="3">3 &mdash; Fair</option>
-            <option value="4" selected>4 &mdash; Good</option>
-            <option value="5">5 &mdash; Great</option>
-            <option value="6">6 &mdash; Excellent</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span>And cloud cover is under</span>
-          <select name="cloud_threshold">
-            <option value="30">30%</option>
-            <option value="50" selected>50%</option>
-            <option value="70">70%</option>
-          </select>
-        </label>
-      </div>
-
-      <label class="field">
-        <span>Also notify me if cloud cover changes by at least</span>
-        <select name="cloud_change_threshold">
-          <option value="15">15 percentage points</option>
-          <option value="25" selected>25 percentage points</option>
-          <option value="40">40 percentage points</option>
-        </select>
-      </label>
-
-      <button type="submit" class="btn-primary">Send me alerts</button>
-      <p class="form-fineprint">Standard messaging rates may apply. Reply STOP at any time to unsubscribe.</p>
-    </form>
-  </div>
-</section>
-
-{% endblock %}
+      <section id="locations" class="panel wrap">
+         <h2>Where to go tonight</h2>
+         <p class="section-sub">All within a short drive of the townsite, ordered from closest to farthest.</p>
+         <div class="location-grid">
+            {% for loc in locations %}
+            <article class="location-card">
+               <div class="location-card-top">
+                  <h3>{{ loc.name }}</h3>
+                  <span class="drive-time">{{ loc.drive_minutes }} min drive</span>
+               </div>
+               <p class="location-facing">Faces {{ loc.facing }}</p>
+               <p class="location-notes">{{ loc.notes }}</p>
+               <a class="location-map-link" href="https://www.google.com/maps/search/?api=1&amp;query={{ loc.lat }},{{ loc.lon }}" target="_blank" rel="noopener">
+               Open in maps →
+               </a>
+            </article>
+            {% endfor %}
+         </div>
+      </section>
+      <section id="subscribe" class="panel wrap subscribe-panel">
+         <div class="subscribe-inner">
+            <div class="subscribe-copy">
+               <h2>Get notified when it's worth going outside</h2>
+               <p>
+                  Set your own thresholds. We'll notify you when geomagnetic activity and cloud
+                  cover both line up, and again whenever the sky changes significantly.
+               </p>
+            </div>
+            <form class="subscribe-form" action="{{ url_for('subscribe') }}" method="POST">
+               <div class="contact-toggle">
+                  <button type="button" class="toggle-btn active" data-method="email">Email</button>
+                  <button type="button" class="toggle-btn" data-method="phone">Phone</button>
+               </div>
+               <input type="hidden" name="contact_method" id="contact_method" value="email">
+               <div class="contact-fields" id="email-fields">
+                  <label class="field">
+                  <span>Email address</span>
+                  <input type="email" name="email" placeholder="you@example.com">
+                  </label>
+               </div>
+               <div class="contact-fields" id="phone-fields" style="display:none;">
+                  <label class="field">
+                  <span>Phone number</span>
+                  <input type="tel" name="phone_number" placeholder="+14035551234">
+                  <small>Include your country code, e.g. +1 for Canada/US.</small>
+                  </label>
+                  <label class="field">
+                     <span>Mobile carrier (for free SMS via email gateway)</span>
+                     <select name="carrier_domain">
+                        <option value="">-- Select carrier (optional) --</option>
+                        <option value="vtext.com">Verizon (vtext.com)</option>
+                        <option value="txt.att.net">AT&amp;T (txt.att.net)</option>
+                        <option value="tmomail.net">T-Mobile (tmomail.net)</option>
+                        <option value="messaging.sprintpcs.com">Sprint (messaging.sprintpcs.com)</option>
+                        <option value="pm.sprint.com">Sprint (pm.sprint.com)</option>
+                        <option value="myboostmobile.com">Boost Mobile (myboostmobile.com)</option>
+                        <option value="vmobl.com">Virgin Mobile (vmobl.com)</option>
+                        <option value="sms.mycricket.com">Cricket (sms.mycricket.com)</option>
+                        <option value="text.republicwireless.com">Republic Wireless (text.republicwireless.com)</option>
+                        <option value="msg.fi.google.com">Google Fi (msg.fi.google.com)</option>
+                        <option value="mail.mymetropcs.com">Metro PCS (mail.mymetropcs.com)</option>
+                        <option value="message.alltel.com">Alltel (message.alltel.com)</option>
+                        <option value="cingularme.com">Cingular (cingularme.com)</option>
+                        <option value="dutypage.com">DutyPage (dutypage.com)</option>
+                        <option value="page.nextel.com">Nextel (page.nextel.com)</option>
+                        <option value="qwestmp.com">Qwest (qwestmp.com)</option>
+                        <option value="pcs.rogers.com">Rogers (pcs.rogers.com)</option>
+                        <option value="fido.ca">Fido (fido.ca)</option>
+                        <option value="bell.ca">Bell (bell.ca)</option>
+                        <option value="txt.bell.ca">Bell (txt.bell.ca)</option>
+                        <option value="sms.telus.com">Telus (sms.telus.com)</option>
+                        <option value="msg.koodomobile.com">Koodo (msg.koodomobile.com)</option>
+                        <option value="text.mts.net">MTS (text.mts.net)</option>
+                        <option value="sms.sasktel.com">SaskTel (sms.sasktel.com)</option>
+                        <option value="mobiletxt.ca">Virgin Mobile Canada (mobiletxt.ca)</option>
+                        <option value="fido.ca">Fido Canada (fido.ca)</option>
+                     </select>
+                     <small>Leave blank to use Twilio (requires account). Select your carrier for free email-to-SMS.</small>
+                  </label>
+               </div>
+               <div class="field-row">
+                  <label class="field">
+                     <span>Alert me when Kp reaches</span>
+                     <select name="kp_threshold">
+                        <option value="3">3 — Fair</option>
+                        <option value="4" selected="">4 — Good</option>
+                        <option value="5">5 — Great</option>
+                        <option value="6">6 — Excellent</option>
+                     </select>
+                  </label>
+                  <label class="field">
+                     <span>And cloud cover is under</span>
+                     <select name="cloud_threshold">
+                        <option value="30">30%</option>
+                        <option value="50" selected="">50%</option>
+                        <option value="70">70%</option>
+                     </select>
+                  </label>
+               </div>
+               <label class="field">
+                  <span>Also notify me if cloud cover changes by at least</span>
+                  <select name="cloud_change_threshold">
+                     <option value="15">15 percentage points</option>
+                     <option value="25" selected="">25 percentage points</option>
+                     <option value="40">40 percentage points</option>
+                  </select>
+               </label>
+               <button type="submit" class="btn-primary">Subscribe</button>
+               <p class="form-fineprint">Standard messaging rates may apply for SMS. You can unsubscribe at any time.</p>
+            </form>
+         </div>
+      </section>
+      {% endblock %}
+   </body>
+</html>
