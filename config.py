@@ -17,7 +17,16 @@ class Config:
     TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
     TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "")
 
-    # Email-to-SMS gateway settings (alternative to Twilio)
+    # Preferred email path: Brevo's HTTPS API. Works on hosts (like Render's
+    # free tier) that block outbound SMTP ports 25/465/587, since it's a
+    # plain HTTPS call. Sign up free at https://www.brevo.com
+    BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
+    BREVO_SENDER_EMAIL = os.environ.get("BREVO_SENDER_EMAIL", "")
+    BREVO_SENDER_NAME = os.environ.get("BREVO_SENDER_NAME", "Aurora Banff")
+
+    # Optional fallback: raw SMTP. Only works if your host allows outbound
+    # SMTP (most paid hosting does; many free tiers, including Render's
+    # free web services, block it). Used only if Brevo is not configured.
     SMTP_SERVER = os.environ.get("SMTP_SERVER", "")
     SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))
     SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "")
