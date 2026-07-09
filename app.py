@@ -153,7 +153,7 @@ def create_app():
             )
 
         # Send confirmation email for email subscribers
-        if email and is_new:
+        if email:
             unsubscribe_url = url_for(
                 "unsubscribe", token=existing.unsubscribe_token, _external=True
             )
